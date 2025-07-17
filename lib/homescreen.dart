@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'app_drawer.dart';
 
 class homescreen extends StatelessWidget {
   final String username;
@@ -9,53 +10,7 @@ class homescreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: Drawer(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  username,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Absensi'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.history),
-              title: Text('Riwayat Absensi'),
-              onTap: () {
-                // Navigator.pushNamed(context, '/riwayat');
-              },
-            ),
-            Spacer(),
-            ListTile(
-              leading: Icon(Icons.logout),
-              title: Text('Keluar'),
-              onTap: () {
-                // Logout logic
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: AppDrawer(username: username),
       appBar: AppBar(
         backgroundColor: Colors.pink[200],
         elevation: 0,
@@ -88,7 +43,7 @@ class homescreen extends StatelessWidget {
                 ),
                 child: FlutterMap(
                   options: MapOptions(
-                    center: LatLng(-8.174866,113.6981424), // Contoh: Jakarta
+                    center: LatLng(-8.174866, 113.6981424), // Contoh: Jakarta
                     zoom: 15,
                   ),
                   children: [
