@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import '';
+import 'app_drawer.dart';
 
 class homescreen extends StatefulWidget {
   final String username;
@@ -97,12 +97,7 @@ class _homescreenState extends State<homescreen> {
       appBar: AppBar(
         backgroundColor: Colors.pink[200],
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: Colors.black),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
+        iconTheme: IconThemeData(color: Colors.black),
         title: Text(
           'Absensi',
           style: TextStyle(
@@ -195,26 +190,6 @@ class _homescreenState extends State<homescreen> {
             SizedBox(height: 5),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class AppDrawer extends StatelessWidget {
-  final String username;
-  const AppDrawer({Key? key, required this.username}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        children: [
-          UserAccountsDrawerHeader(
-            accountName: Text(username),
-            accountEmail: Text(''),
-          ),
-          // Tambahkan menu lain di sini
-        ],
       ),
     );
   }

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'riwayat_absensi.dart';
 import 'homescreen.dart';
+import 'package:absensi_gps/auth/login_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   final String username;
@@ -62,7 +63,11 @@ class AppDrawer extends StatelessWidget {
             leading: Icon(Icons.logout),
             title: Text('Keluar'),
             onTap: () {
-              // Logout logic
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
             },
           ),
         ],

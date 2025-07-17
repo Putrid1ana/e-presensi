@@ -4,8 +4,7 @@ import 'app_drawer.dart';
 class RiwayatAbsensiPage extends StatelessWidget {
   final String username; // ✅ Tambahkan ini
 
-  const RiwayatAbsensiPage({Key? key, this.username = "Username"})
-      : super(key: key);
+  const RiwayatAbsensiPage({Key? key, this.username = "Username"}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
