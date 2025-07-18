@@ -12,9 +12,9 @@ class ProfilPage extends StatefulWidget {
 
 class _ProfilPageState extends State<ProfilPage> {
   String nama = "";
-  String nis = "";
+  String nisn = "";
   String kelas = "";
-  String email = "";
+  String jeniskelamin = "";
 
   @override
   void initState() {
@@ -26,26 +26,26 @@ class _ProfilPageState extends State<ProfilPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       nama = prefs.getString('namaUser') ?? "";
-      nis = prefs.getString('nis') ?? "";
+      nisn = prefs.getString('nisn') ?? "";
       kelas = prefs.getString('kelas') ?? "";
-      email = prefs.getString('email') ?? "";
+      jeniskelamin = prefs.getString('jeniskelamin') ?? "";
     });
   }
 
   void simpanDataSiswa() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('namaUser', nama);
-    await prefs.setString('nis', nis);
+    await prefs.setString('nisn', nisn);
     await prefs.setString('kelas', kelas);
-    await prefs.setString('email', email);
+    await prefs.setString('jeniskelamin', jeniskelamin); // Perbaikan disini
     ambilDataSiswa();
   }
 
   void tampilkanEditDialog() {
     final namaController = TextEditingController(text: nama);
-    final nisController = TextEditingController(text: nis);
+    final nisnController = TextEditingController(text: nisn);
     final kelasController = TextEditingController(text: kelas);
-    final emailController = TextEditingController(text: email);
+    String? selectedGender = jeniskelamin;
 
     showDialog(
       context: context,
@@ -54,10 +54,31 @@ class _ProfilPageState extends State<ProfilPage> {
         content: SingleChildScrollView(
           child: Column(
             children: [
-              TextField(controller: namaController, decoration: const InputDecoration(labelText: "Nama")),
-              TextField(controller: nisController, decoration: const InputDecoration(labelText: "NIS")),
-              TextField(controller: kelasController, decoration: const InputDecoration(labelText: "Kelas")),
-              TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email")),
+              TextField(
+                controller: namaController,
+                decoration: const InputDecoration(labelText: "Nama"),
+              ),
+              TextField(
+                controller: nisnController,
+                decoration: const InputDecoration(labelText: "NISN"),
+                keyboardType: TextInputType.number,
+              ),
+              DropdownButtonFormField<String>(
+              value: (selectedGender != null && selectedGender!.isNotEmpty) ? selectedGender : null,
+
+                decoration: const InputDecoration(labelText: "Jenis Kelamin"),
+                items: const [
+                  DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
+                  DropdownMenuItem(value: 'P', child: Text('Perempuan')),
+                ],
+                onChanged: (value) {
+                  selectedGender = value ?? "";
+                },
+              ),
+              TextField(
+                controller: kelasController,
+                decoration: const InputDecoration(labelText: "Kelas"),
+              ),
             ],
           ),
         ),
@@ -71,9 +92,9 @@ class _ProfilPageState extends State<ProfilPage> {
             onPressed: () {
               setState(() {
                 nama = namaController.text;
-                nis = nisController.text;
+                nisn = nisnController.text;
                 kelas = kelasController.text;
-                email = emailController.text;
+                jeniskelamin = selectedGender ?? "";
               });
               simpanDataSiswa();
               Navigator.pop(context);
@@ -88,12 +109,12 @@ class _ProfilPageState extends State<ProfilPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
-      drawer: AppDrawer(username: widget.username), // ✅ Tampilkan Drawer langsung
+      drawer: AppDrawer(username: widget.username),
       appBar: AppBar(
         title: const Text("Profil Siswa"),
         backgroundColor: Colors.pink[300],
         foregroundColor: Colors.white,
-        automaticallyImplyLeading: true, // tampilkan icon drawer (☰) jika drawer tersedia
+        automaticallyImplyLeading: true,
       ),
       body: Column(
         children: [
@@ -118,34 +139,28 @@ class _ProfilPageState extends State<ProfilPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  widget.username,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                ),
+                // Text(
+                //   widget.username,
+                //   style: const TextStyle(
+                //     fontSize: 16,
+                //     color: Colors.white70,
+                //   ),
+                // ),
               ],
             ),
           ),
           const SizedBox(height: 30),
-
-          // Detail siswa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
-                itemProfil("NIS", nis),
-                const Divider(),
+                itemProfil("NISN", nisn),
+                itemProfil("Jenis Kelamin", jeniskelamin == 'L' ? 'Laki-laki' : jeniskelamin == 'P' ? 'Perempuan' : ''),
                 itemProfil("Kelas", kelas),
-                const Divider(),
-                itemProfil("Email", email),
               ],
             ),
           ),
-
           const SizedBox(height: 30),
-
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.pink[300],
@@ -155,7 +170,7 @@ class _ProfilPageState extends State<ProfilPage> {
             onPressed: tampilkanEditDialog,
             icon: const Icon(Icons.edit),
             label: const Text("Edit Akun"),
-          )
+          ),
         ],
       ),
     );
