@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_drawer.dart';
 
 class ProfilPage extends StatefulWidget {
   final String username;
@@ -87,11 +88,12 @@ class _ProfilPageState extends State<ProfilPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
+      drawer: AppDrawer(username: widget.username), // ✅ Tampilkan Drawer langsung
       appBar: AppBar(
         title: const Text("Profil Siswa"),
         backgroundColor: Colors.pink[300],
         foregroundColor: Colors.white,
-        elevation: 0,
+        automaticallyImplyLeading: true, // tampilkan icon drawer (☰) jika drawer tersedia
       ),
       body: Column(
         children: [
@@ -126,7 +128,6 @@ class _ProfilPageState extends State<ProfilPage> {
               ],
             ),
           ),
-
           const SizedBox(height: 30),
 
           // Detail siswa
