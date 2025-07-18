@@ -22,6 +22,10 @@ class _homescreenState extends State<homescreen> {
   bool _userMovedMap = false;
   String? _provider;
   DateTime? _timestamp;
+  static const LatLng _mainLocation = LatLng(-8.157596, 113.722835);
+  static const double _maxRadius = 50.0; // meter
+  bool _inZone = false;
+  double? _distanceToMain;
 
   @override
   void initState() {
@@ -68,6 +72,13 @@ class _homescreenState extends State<homescreen> {
         _accuracy = position.accuracy;
         _provider = position.isMocked ? 'Mock' : 'GPS';
         _timestamp = position.timestamp;
+        _distanceToMain = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          _mainLocation.latitude,
+          _mainLocation.longitude,
+        );
+        _inZone = _distanceToMain! <= _maxRadius;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_currentLatLng != null && !_userMovedMap) {
@@ -94,6 +105,13 @@ class _homescreenState extends State<homescreen> {
           _accuracy = position.accuracy;
           _provider = position.isMocked ? 'Mock' : 'GPS';
           _timestamp = position.timestamp;
+          _distanceToMain = Geolocator.distanceBetween(
+            position.latitude,
+            position.longitude,
+            _mainLocation.latitude,
+            _mainLocation.longitude,
+          );
+          _inZone = _distanceToMain! <= _maxRadius;
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!_userMovedMap) {
@@ -172,6 +190,29 @@ class _homescreenState extends State<homescreen> {
                                       size: 40,
                                     ),
                                   ),
+                                  // Marker lokasi utama
+                                  Marker(
+                                    width: 60,
+                                    height: 60,
+                                    point: _mainLocation,
+                                    child: const Icon(
+                                      Icons.location_on,
+                                      color: Colors.red,
+                                      size: 40,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              // Lingkaran zona absensi
+                              CircleLayer(
+                                circles: [
+                                  CircleMarker(
+                                    point: _mainLocation,
+                                    color: Colors.red.withOpacity(0.2),
+                                    borderStrokeWidth: 2,
+                                    borderColor: Colors.red,
+                                    radius: _maxRadius, // meter
+                                  ),
                                 ],
                               ),
                             ],
@@ -192,6 +233,24 @@ class _homescreenState extends State<homescreen> {
                         style: TextStyle(fontSize: 12, color: Colors.black45)),
                 ],
               ),
+            if (_distanceToMain != null)
+              Column(
+                children: [
+                  Text(
+                    _inZone
+                        ? 'Anda berada di dalam zona absensi.'
+                        : 'Anda di luar zona absensi.',
+                    style: TextStyle(
+                      color: _inZone ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                      'Jarak ke titik utama: ${_distanceToMain!.toStringAsFixed(1)} meter',
+                      style: TextStyle(fontSize: 13, color: Colors.black54)),
+                ],
+              ),
             SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -203,9 +262,11 @@ class _homescreenState extends State<homescreen> {
                     elevation: 4,
                     minimumSize: Size(100, 40),
                   ),
-                  onPressed: () {
-                    // Logika absen
-                  },
+                  onPressed: _inZone
+                      ? () {
+                          // Logika absen
+                        }
+                      : null,
                   child: Text('Absen'),
                 ),
                 ElevatedButton(
