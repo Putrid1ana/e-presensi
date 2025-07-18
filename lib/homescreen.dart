@@ -18,6 +18,10 @@ class _homescreenState extends State<homescreen> {
   late final MapController _mapController;
   Stream<Position>? _positionStream;
   bool _mapMoved = false;
+  double? _accuracy;
+  bool _userMovedMap = false;
+  String? _provider;
+  DateTime? _timestamp;
 
   @override
   void initState() {
@@ -57,13 +61,16 @@ class _homescreenState extends State<homescreen> {
     }
     try {
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.bestForNavigation,
       );
       setState(() {
         _currentLatLng = LatLng(position.latitude, position.longitude);
+        _accuracy = position.accuracy;
+        _provider = position.isMocked ? 'Mock' : 'GPS';
+        _timestamp = position.timestamp;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_currentLatLng != null) {
+        if (_currentLatLng != null && !_userMovedMap) {
           _mapController.move(_currentLatLng!, 17);
         }
       });
@@ -75,18 +82,25 @@ class _homescreenState extends State<homescreen> {
     }
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 1,
       ),
     );
     _positionStream!.listen((position) {
       final latLng = LatLng(position.latitude, position.longitude);
-      setState(() {
-        _currentLatLng = latLng;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.move(latLng, 17);
-      });
+      if (position.accuracy < 50) {
+        setState(() {
+          _currentLatLng = latLng;
+          _accuracy = position.accuracy;
+          _provider = position.isMocked ? 'Mock' : 'GPS';
+          _timestamp = position.timestamp;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_userMovedMap) {
+            _mapController.move(latLng, 17);
+          }
+        });
+      }
     });
   }
 
@@ -131,6 +145,13 @@ class _homescreenState extends State<homescreen> {
                               center: _currentLatLng,
                               zoom: 17,
                               maxZoom: 19,
+                              onPositionChanged: (pos, hasGesture) {
+                                if (hasGesture) {
+                                  setState(() {
+                                    _userMovedMap = true;
+                                  });
+                                }
+                              },
                             ),
                             children: [
                               TileLayer(
@@ -157,7 +178,21 @@ class _homescreenState extends State<homescreen> {
                           ),
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 10),
+            if (_accuracy != null)
+              Column(
+                children: [
+                  Text('Akurasi GPS: ${_accuracy!.toStringAsFixed(1)} meter',
+                      style: TextStyle(fontSize: 14, color: Colors.black54)),
+                  if (_provider != null)
+                    Text('Provider: $_provider',
+                        style: TextStyle(fontSize: 12, color: Colors.black45)),
+                  if (_timestamp != null)
+                    Text('Waktu: ${_timestamp.toString()}',
+                        style: TextStyle(fontSize: 12, color: Colors.black45)),
+                ],
+              ),
+            SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -184,6 +219,18 @@ class _homescreenState extends State<homescreen> {
                     // Logika izin
                   },
                   child: Text('Izin'),
+                ),
+                IconButton(
+                  icon: Icon(Icons.my_location, color: Colors.blue),
+                  tooltip: 'Kembali ke lokasi saya',
+                  onPressed: () {
+                    if (_currentLatLng != null) {
+                      setState(() {
+                        _userMovedMap = false;
+                      });
+                      _mapController.move(_currentLatLng!, 17);
+                    }
+                  },
                 ),
               ],
             ),
