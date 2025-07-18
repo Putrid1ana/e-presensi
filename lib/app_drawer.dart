@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'riwayat_absensi.dart';
 import 'homescreen.dart';
 import 'package:absensi_gps/auth/login_screen.dart';
+import 'profil_page.dart';
 
 class AppDrawer extends StatelessWidget {
   final String username;
@@ -54,6 +55,19 @@ class AppDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => RiwayatAbsensiPage(username: username),
+                ),
+              );
+            },
+          ),
+           ListTile(
+            leading: Icon(Icons.person),
+            title: Text('Profil Siswa'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfilPage(username: username),
                 ),
               );
             },
