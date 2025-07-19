@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'email_verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,8 +13,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController nisnController = TextEditingController();
   final TextEditingController namaController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final TextEditingController kelasController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
 
   String? selectedGender;
 
@@ -20,15 +24,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     nisnController.dispose();
     namaController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     kelasController.dispose();
     super.dispose();
   }
 
-  void _register(BuildContext context) {
+  Future<void> _register(BuildContext context) async {
     if (nisnController.text.isEmpty ||
         namaController.text.isEmpty ||
+        emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
         confirmPasswordController.text.isEmpty ||
         kelasController.text.isEmpty ||
@@ -38,20 +44,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-
     if (passwordController.text != confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Password tidak cocok')),
       );
       return;
     }
-
-    // Simulasi sukses
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Registrasi berhasil')),
-    );
-
-    Navigator.pop(context); // Kembali ke halaman login
+    try {
+      final credential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+      await credential.user?.sendEmailVerification();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Registrasi berhasil, cek email untuk verifikasi!')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => EmailVerificationScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Registrasi gagal';
+      if (e.code == 'email-already-in-use') msg = 'Email sudah terdaftar';
+      if (e.code == 'invalid-email') msg = 'Format email tidak valid';
+      if (e.code == 'weak-password') msg = 'Password terlalu lemah';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Terjadi kesalahan')),
+      );
+    }
   }
 
   @override
@@ -75,7 +101,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 labelText: 'NISN',
                 filled: true,
                 fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 16),
@@ -86,7 +113,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 labelText: 'Nama Lengkap',
                 filled: true,
                 fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.email),
+                labelText: 'Email',
+                filled: true,
+                fillColor: Colors.white,
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 16),
@@ -97,7 +138,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 labelText: 'Jenis Kelamin',
                 filled: true,
                 fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               items: const [
                 DropdownMenuItem(value: 'Laki-laki', child: Text('Laki-laki')),
@@ -117,7 +159,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 labelText: 'Kelas',
                 filled: true,
                 fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 16),
@@ -129,7 +172,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 labelText: 'Password',
                 filled: true,
                 fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 16),
@@ -141,7 +185,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 labelText: 'Konfirmasi Password',
                 filled: true,
                 fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 32),
@@ -153,7 +198,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.pink[300],
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text('Daftar', style: TextStyle(fontSize: 16)),
               ),

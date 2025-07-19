@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "962325635345",
+    "project_id": "e-presensi-8a886",
+    "storage_bucket": "e-presensi-8a886.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:962325635345:android:424f750fac157880aa2cb0",
+        "android_client_info": {
+          "package_name": "com.example.absensi_gps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsIAHom0O7LEgPTOruiv0pbaRVxVUFa40"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

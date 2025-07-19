@@ -34,6 +34,32 @@ class _homescreenState extends State<homescreen> {
     _initLocation();
   }
 
+  void _fitMapToBounds() {
+    if (_currentLatLng != null) {
+      final sw = LatLng(
+        _currentLatLng!.latitude < _mainLocation.latitude
+            ? _currentLatLng!.latitude
+            : _mainLocation.latitude,
+        _currentLatLng!.longitude < _mainLocation.longitude
+            ? _currentLatLng!.longitude
+            : _mainLocation.longitude,
+      );
+      final ne = LatLng(
+        _currentLatLng!.latitude > _mainLocation.latitude
+            ? _currentLatLng!.latitude
+            : _mainLocation.latitude,
+        _currentLatLng!.longitude > _mainLocation.longitude
+            ? _currentLatLng!.longitude
+            : _mainLocation.longitude,
+      );
+      final bounds = LatLngBounds(sw, ne);
+      _mapController.fitBounds(
+        bounds,
+        options: const FitBoundsOptions(padding: EdgeInsets.all(60)),
+      );
+    }
+  }
+
   Future<void> _initLocation() async {
     LocationPermission permission;
     bool serviceEnabled;
@@ -81,9 +107,7 @@ class _homescreenState extends State<homescreen> {
         _inZone = _distanceToMain! <= _maxRadius;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_currentLatLng != null && !_userMovedMap) {
-          _mapController.move(_currentLatLng!, 17);
-        }
+        _fitMapToBounds();
       });
     } catch (e) {
       setState(() {
@@ -91,6 +115,7 @@ class _homescreenState extends State<homescreen> {
             '${e.toString()}';
       });
     }
+    // Pastikan stream tidak null
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.bestForNavigation,
@@ -114,9 +139,7 @@ class _homescreenState extends State<homescreen> {
           _inZone = _distanceToMain! <= _maxRadius;
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!_userMovedMap) {
-            _mapController.move(latLng, 17);
-          }
+          _fitMapToBounds();
         });
       }
     });
@@ -155,68 +178,67 @@ class _homescreenState extends State<homescreen> {
                     ? Center(
                         child: Text(_error!,
                             style: const TextStyle(color: Colors.red)))
-                    : _currentLatLng == null
-                        ? const Center(child: CircularProgressIndicator())
-                        : FlutterMap(
-                            mapController: _mapController,
-                            options: MapOptions(
-                              center: _currentLatLng,
-                              zoom: 17,
-                              maxZoom: 19,
-                              onPositionChanged: (pos, hasGesture) {
-                                if (hasGesture) {
-                                  setState(() {
-                                    _userMovedMap = true;
-                                  });
-                                }
-                              },
-                            ),
-                            children: [
-                              TileLayer(
-                                urlTemplate:
-                                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                                subdomains: ['a', 'b', 'c'],
-                                userAgentPackageName: 'com.example.absensi_gps',
-                              ),
-                              MarkerLayer(
-                                markers: [
-                                  Marker(
-                                    width: 60,
-                                    height: 60,
-                                    point: _currentLatLng!,
-                                    child: const Icon(
-                                      Icons.my_location,
-                                      color: Colors.blue,
-                                      size: 40,
-                                    ),
+                    : FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          center: _currentLatLng ?? _mainLocation,
+                          zoom: 17,
+                          maxZoom: 19,
+                          onPositionChanged: (pos, hasGesture) {
+                            if (hasGesture) {
+                              setState(() {
+                                _userMovedMap = true;
+                              });
+                            }
+                          },
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                            subdomains: ['a', 'b', 'c'],
+                            userAgentPackageName: 'com.example.absensi_gps',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              if (_currentLatLng != null)
+                                Marker(
+                                  width: 60,
+                                  height: 60,
+                                  point: _currentLatLng!,
+                                  child: const Icon(
+                                    Icons.my_location,
+                                    color: Colors.blue,
+                                    size: 40,
                                   ),
-                                  // Marker lokasi utama
-                                  Marker(
-                                    width: 60,
-                                    height: 60,
-                                    point: _mainLocation,
-                                    child: const Icon(
-                                      Icons.location_on,
-                                      color: Colors.red,
-                                      size: 40,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              // Lingkaran zona absensi
-                              CircleLayer(
-                                circles: [
-                                  CircleMarker(
-                                    point: _mainLocation,
-                                    color: Colors.red.withOpacity(0.2),
-                                    borderStrokeWidth: 2,
-                                    borderColor: Colors.red,
-                                    radius: _maxRadius, // meter
-                                  ),
-                                ],
+                                ),
+                              // Marker lokasi utama
+                              Marker(
+                                width: 60,
+                                height: 60,
+                                point: _mainLocation,
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.red,
+                                  size: 40,
+                                ),
                               ),
                             ],
                           ),
+                          // Lingkaran zona absensi
+                          CircleLayer(
+                            circles: [
+                              CircleMarker(
+                                point: _mainLocation,
+                                color: Colors.red.withOpacity(0.2),
+                                borderStrokeWidth: 2,
+                                borderColor: Colors.red,
+                                radius: _maxRadius, // meter
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
               ),
             ),
             SizedBox(height: 10),

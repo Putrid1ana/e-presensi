@@ -1,6 +1,8 @@
 import 'package:absensi_gps/auth/register_screen.dart';
 import 'package:absensi_gps/homescreen.dart';
 import 'package:flutter/material.dart'; // Sesuaikan dengan path file kamu
+import 'package:firebase_auth/firebase_auth.dart';
+import 'email_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,33 +12,53 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController nisnController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   @override
   void dispose() {
-    nisnController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
-  // Fungsi login lokal (sementara tanpa backend)
-  void _login(BuildContext context) {
-    final nisn = nisnController.text.trim();
-    final password = passwordController.text;
-
-    if (nisn.isNotEmpty && password.isNotEmpty) {
+  Future<void> _login(BuildContext context) async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login berhasil')),
+        const SnackBar(content: Text('Email dan Password wajib diisi')),
       );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const homescreen()),
+      return;
+    }
+    try {
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-    } else {
+      final user = credential.user;
+      await user?.reload();
+      if (user != null && user.emailVerified) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const homescreen()),
+        );
+      } else if (user != null && !user.emailVerified) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => EmailVerificationScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Login gagal';
+      if (e.code == 'user-not-found') msg = 'Email tidak terdaftar';
+      if (e.code == 'wrong-password') msg = 'Password salah';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NISN dan Password wajib diisi')),
+        SnackBar(content: Text(msg)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Terjadi kesalahan')),
       );
     }
   }
@@ -63,11 +85,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 40),
               TextField(
-                controller: nisnController,
-                keyboardType: TextInputType.number,
+                controller: emailController,
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.person),
-                  labelText: 'NISN',
+                  prefixIcon: const Icon(Icons.email),
+                  labelText: 'Email',
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
