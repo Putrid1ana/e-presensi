@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'email_verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -56,6 +57,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
+      // Simpan data profil ke Realtime Database
+      final uid = credential.user?.uid;
+      if (uid != null) {
+        await FirebaseDatabase.instance.ref('profil/$uid').set({
+          'namaLengkap': namaController.text.trim(),
+          'nisn': nisnController.text.trim(),
+          'jenisKelamin': selectedGender,
+          'kelas': kelasController.text.trim(),
+        });
+      }
       await credential.user?.sendEmailVerification();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

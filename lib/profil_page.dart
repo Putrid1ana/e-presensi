@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_drawer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class ProfilPage extends StatefulWidget {
   final String username;
@@ -14,7 +16,7 @@ class _ProfilPageState extends State<ProfilPage> {
   String nama = "";
   String nisn = "";
   String kelas = "";
-  String jeniskelamin = "";
+  String jenisKelamin = "";
 
   @override
   void initState() {
@@ -23,21 +25,30 @@ class _ProfilPageState extends State<ProfilPage> {
   }
 
   void ambilDataSiswa() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      nama = prefs.getString('namaUser') ?? "";
-      nisn = prefs.getString('nisn') ?? "";
-      kelas = prefs.getString('kelas') ?? "";
-      jeniskelamin = prefs.getString('jeniskelamin') ?? "";
-    });
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final ref = FirebaseDatabase.instance.ref('profil/$uid');
+    final snapshot = await ref.get();
+    if (snapshot.exists) {
+      final data = snapshot.value as Map;
+      setState(() {
+        nama = data['namaLengkap'] ?? "";
+        nisn = data['nisn'] ?? "";
+        kelas = data['kelas'] ?? "";
+        jenisKelamin = data['jenisKelamin'] ?? "";
+      });
+    }
   }
 
   void simpanDataSiswa() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('namaUser', nama);
-    await prefs.setString('nisn', nisn);
-    await prefs.setString('kelas', kelas);
-    await prefs.setString('jeniskelamin', jeniskelamin); // Perbaikan disini
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    await FirebaseDatabase.instance.ref('profil/$uid').set({
+      'namaLengkap': nama,
+      'nisn': nisn,
+      'kelas': kelas,
+      'jenisKelamin': jenisKelamin,
+    });
     ambilDataSiswa();
   }
 
@@ -45,7 +56,7 @@ class _ProfilPageState extends State<ProfilPage> {
     final namaController = TextEditingController(text: nama);
     final nisnController = TextEditingController(text: nisn);
     final kelasController = TextEditingController(text: kelas);
-    String? selectedGender = jeniskelamin;
+    String? selectedGender = jenisKelamin;
 
     showDialog(
       context: context,
@@ -64,12 +75,15 @@ class _ProfilPageState extends State<ProfilPage> {
                 keyboardType: TextInputType.number,
               ),
               DropdownButtonFormField<String>(
-              value: (selectedGender != null && selectedGender!.isNotEmpty) ? selectedGender : null,
-
+                value: (selectedGender != null && selectedGender!.isNotEmpty)
+                    ? selectedGender
+                    : null,
                 decoration: const InputDecoration(labelText: "Jenis Kelamin"),
                 items: const [
-                  DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
-                  DropdownMenuItem(value: 'P', child: Text('Perempuan')),
+                  DropdownMenuItem(
+                      value: 'Laki-laki', child: Text('Laki-laki')),
+                  DropdownMenuItem(
+                      value: 'Perempuan', child: Text('Perempuan')),
                 ],
                 onChanged: (value) {
                   selectedGender = value ?? "";
@@ -94,7 +108,7 @@ class _ProfilPageState extends State<ProfilPage> {
                 nama = namaController.text;
                 nisn = nisnController.text;
                 kelas = kelasController.text;
-                jeniskelamin = selectedGender ?? "";
+                jenisKelamin = selectedGender ?? "";
               });
               simpanDataSiswa();
               Navigator.pop(context);
@@ -127,7 +141,8 @@ class _ProfilPageState extends State<ProfilPage> {
                 const CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.person, size: 60, color: Color.fromARGB(153, 15, 79, 103)),
+                  child: Icon(Icons.person,
+                      size: 60, color: Color.fromARGB(153, 15, 79, 103)),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -155,7 +170,7 @@ class _ProfilPageState extends State<ProfilPage> {
             child: Column(
               children: [
                 itemProfil("NISN", nisn),
-                itemProfil("Jenis Kelamin", jeniskelamin == 'L' ? 'Laki-laki' : jeniskelamin == 'P' ? 'Perempuan' : ''),
+                itemProfil("Jenis Kelamin", jenisKelamin),
                 itemProfil("Kelas", kelas),
               ],
             ),
