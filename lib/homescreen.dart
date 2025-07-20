@@ -3,6 +3,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'app_drawer.dart';
+import 'package:intl/intl.dart';
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class homescreen extends StatefulWidget {
   final String username;
@@ -26,12 +31,35 @@ class _homescreenState extends State<homescreen> {
   static const double _maxRadius = 50.0; // meter
   bool _inZone = false;
   double? _distanceToMain;
+  String? _currentTime;
+  String? _currentDate;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
     _initLocation();
+    initializeDateFormatting('id_ID', null).then((_) {
+      _updateDateTime();
+      _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+        _updateDateTime();
+      });
+    });
+  }
+
+  void _updateDateTime() {
+    final now = DateTime.now();
+    setState(() {
+      _currentTime = DateFormat('HH:mm').format(now);
+      _currentDate = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(now);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _fitMapToBounds() {
@@ -145,6 +173,51 @@ class _homescreenState extends State<homescreen> {
     });
   }
 
+  Future<String?> _getNisn() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return null;
+    final ref = FirebaseDatabase.instance.ref('profil/$uid/nisn');
+    final snapshot = await ref.get();
+    if (snapshot.exists) {
+      return snapshot.value as String?;
+    }
+    return null;
+  }
+
+  Future<void> _absen() async {
+    final nisn = await _getNisn();
+    if (nisn == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengambil NISN.')),
+      );
+      return;
+    }
+    final now = DateTime.now();
+    final tanggal = DateFormat('yyyy-MM-dd').format(now);
+    final waktu = DateFormat('HH:mm').format(now);
+    String status = '';
+    final jam = now.hour;
+    final menit = now.minute;
+    final totalMenit = jam * 60 + menit;
+    if (totalMenit >= 300 && totalMenit <= 420) {
+      status = 'Hadir'; // 05:00 - 07:00
+    } else if (totalMenit >= 421 && totalMenit <= 900) {
+      status = 'Terlambat'; // 07:01 - 15:00
+    } else {
+      status = 'Tidak Hadir'; // Di luar jam absen
+    }
+    final presensiRef = FirebaseDatabase.instance.ref('presensi').push();
+    await presensiRef.set({
+      'nis': nisn,
+      'tanggal': tanggal,
+      'waktu': waktu,
+      'status': status,
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Absen berhasil! Status: $status')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -245,13 +318,16 @@ class _homescreenState extends State<homescreen> {
             if (_accuracy != null)
               Column(
                 children: [
-                  Text('Akurasi GPS: ${_accuracy!.toStringAsFixed(1)} meter',
+                  Text('Akurasi GPS:  ${_accuracy!.toStringAsFixed(1)} meter',
                       style: TextStyle(fontSize: 14, color: Colors.black54)),
                   if (_provider != null)
                     Text('Provider: $_provider',
                         style: TextStyle(fontSize: 12, color: Colors.black45)),
-                  if (_timestamp != null)
-                    Text('Waktu: ${_timestamp.toString()}',
+                  if (_currentTime != null)
+                    Text('Waktu: $_currentTime',
+                        style: TextStyle(fontSize: 12, color: Colors.black45)),
+                  if (_currentDate != null)
+                    Text('Tanggal: $_currentDate',
                         style: TextStyle(fontSize: 12, color: Colors.black45)),
                 ],
               ),
@@ -284,11 +360,7 @@ class _homescreenState extends State<homescreen> {
                     elevation: 4,
                     minimumSize: Size(100, 40),
                   ),
-                  onPressed: _inZone
-                      ? () {
-                          // Logika absen
-                        }
-                      : null,
+                  onPressed: _inZone ? _absen : null,
                   child: Text('Absen'),
                 ),
                 ElevatedButton(

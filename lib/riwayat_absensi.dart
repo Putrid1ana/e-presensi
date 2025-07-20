@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'app_drawer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:intl/intl.dart';
 
 class RiwayatAbsensiPage extends StatefulWidget {
   final String username;
@@ -13,44 +16,51 @@ class RiwayatAbsensiPage extends StatefulWidget {
 
 class _RiwayatAbsensiPageState extends State<RiwayatAbsensiPage> {
   String _selectedStatus = 'Semua';
+  List<Map<String, dynamic>> _riwayat = [];
+  String? _nisn;
+  bool _loading = true;
 
-  // Contoh data absensi (dummy)
-  final List<Map<String, String>> absensiData = [
-    {
-      'nama': 'Rani',
-      'kelas': 'XII RPL',
-      'nis': '123456',
-      'waktu': 'Senin, 05/05/2025',
-      'lokasi': '.....',
-      'status': 'Hadir'
-    },
-    {
-      'nama': 'Budi',
-      'kelas': 'XII RPL',
-      'nis': '123457',
-      'waktu': 'Senin, 05/05/2025',
-      'lokasi': '....',
-      'status': 'Izin'
-    },
-    {
-      'nama': 'Siti',
-      'kelas': 'XII RPL',
-      'nis': '123458',
-      'waktu': 'Senin, 05/05/2025',
-      'lokasi': '...',
-      'status': 'Tidak Hadir'
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchNisnAndRiwayat();
+  }
+
+  Future<void> _fetchNisnAndRiwayat() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final profilRef = FirebaseDatabase.instance.ref('profil/$uid/nisn');
+    final profilSnap = await profilRef.get();
+    if (!profilSnap.exists) return;
+    _nisn = profilSnap.value as String?;
+    if (_nisn == null) return;
+    final presensiRef = FirebaseDatabase.instance.ref('presensi');
+    final presensiSnap = await presensiRef.get();
+    List<Map<String, dynamic>> temp = [];
+    if (presensiSnap.exists) {
+      for (final child in presensiSnap.children) {
+        final data = child.value as Map<dynamic, dynamic>;
+        if (data['nis'] == _nisn) {
+          temp.add({
+            'nis': data['nis'],
+            'tanggal': data['tanggal'],
+            'waktu': data['waktu'],
+            'status': data['status'],
+          });
+        }
+      }
+    }
+    setState(() {
+      _riwayat = temp;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Filter data berdasarkan status yang dipilih
-    List<Map<String, String>> filteredData = _selectedStatus == 'Semua'
-        ? absensiData
-        : absensiData
-            .where((item) => item['status'] == _selectedStatus)
-            .toList();
-
+    List<Map<String, dynamic>> filteredData = _selectedStatus == 'Semua'
+        ? _riwayat
+        : _riwayat.where((item) => item['status'] == _selectedStatus).toList();
     return Scaffold(
       drawer: AppDrawer(username: widget.username),
       appBar: AppBar(
@@ -71,7 +81,6 @@ class _RiwayatAbsensiPageState extends State<RiwayatAbsensiPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Dropdown filter
             Row(
               children: [
                 const Text(
@@ -81,7 +90,7 @@ class _RiwayatAbsensiPageState extends State<RiwayatAbsensiPage> {
                 const SizedBox(width: 10),
                 DropdownButton<String>(
                   value: _selectedStatus,
-                  items: ['Semua', 'Hadir', 'Tidak Hadir', 'Izin']
+                  items: ['Semua', 'Terlambat', 'Hadir', 'Tidak Hadir']
                       .map((status) => DropdownMenuItem(
                             value: status,
                             child: Text(status),
@@ -96,46 +105,50 @@ class _RiwayatAbsensiPageState extends State<RiwayatAbsensiPage> {
               ],
             ),
             const SizedBox(height: 10),
-            // Header tabel
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
               color: Colors.grey[300],
               child: Row(
                 children: const [
                   _TableCellFlex(text: 'No', flex: 1),
+                  _TableCellFlex(text: 'NISN', flex: 2),
                   _TableCellFlex(text: 'Waktu', flex: 2),
-                  _TableCellFlex(text: 'Nama', flex: 2),
-                  _TableCellFlex(text: 'Kelas', flex: 2),
-                  _TableCellFlex(text: 'NIS', flex: 2),
-                  _TableCellFlex(text: 'Lokasi', flex: 2),
+                  _TableCellFlex(text: 'Tanggal', flex: 2),
                   _TableCellFlex(text: 'Status', flex: 2),
                 ],
               ),
             ),
             const SizedBox(height: 4),
-            // Isi data
             Expanded(
-              child: ListView.builder(
-                itemCount: filteredData.length,
-                itemBuilder: (context, index) {
-                  final item = filteredData[index];
-                  return Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    color: index % 2 == 0 ? Colors.white : Colors.grey[100],
-                    child: Row(
-                      children: [
-                        _TableCellFlex(text: '${index + 1}', flex: 1),
-                        _TableCellFlex(text: item['waktu']!, flex: 2),
-                        _TableCellFlex(text: item['nama']!, flex: 2),
-                        _TableCellFlex(text: item['kelas']!, flex: 2),
-                        _TableCellFlex(text: item['nis']!, flex: 2),
-                        _TableCellFlex(text: item['lokasi']!, flex: 2),
-                        _TableCellFlex(text: item['status']!, flex: 2),
-                      ],
-                    ),
-                  );
-                },
-              ),
+              child: _loading
+                  ? Center(child: CircularProgressIndicator())
+                  : filteredData.isEmpty
+                      ? Center(child: Text('Belum ada data presensi.'))
+                      : ListView.builder(
+                          itemCount: filteredData.length,
+                          itemBuilder: (context, index) {
+                            final item = filteredData[index];
+                            return Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              color: index % 2 == 0
+                                  ? Colors.white
+                                  : Colors.grey[100],
+                              child: Row(
+                                children: [
+                                  _TableCellFlex(text: '${index + 1}', flex: 1),
+                                  _TableCellFlex(
+                                      text: item['nis'] ?? '', flex: 2),
+                                  _TableCellFlex(
+                                      text: item['waktu'] ?? '', flex: 2),
+                                  _TableCellFlex(
+                                      text: item['tanggal'] ?? '', flex: 2),
+                                  _TableCellFlex(
+                                      text: item['status'] ?? '', flex: 2),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
