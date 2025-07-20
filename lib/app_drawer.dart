@@ -18,8 +18,9 @@ class AppDrawer extends StatelessWidget {
         children: [
           _UserHeader(username: username),
           ListTile(
-            leading: Icon(Icons.home),
-            title: Text('Absensi'),
+            leading: Icon(Icons.home, size: 28, color: Colors.pink[300]),
+            title: Text('Absensi',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
@@ -30,9 +31,11 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
+          Divider(height: 1),
           ListTile(
-            leading: Icon(Icons.history),
-            title: Text('Riwayat Absensi'),
+            leading: Icon(Icons.history, size: 28, color: Colors.pink[300]),
+            title: Text('Riwayat Absensi',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
@@ -43,9 +46,11 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
+          Divider(height: 1),
           ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Profil Siswa'),
+            leading: Icon(Icons.person, size: 28, color: Colors.pink[300]),
+            title: Text('Profil Siswa',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -57,9 +62,14 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           Spacer(),
+          Divider(height: 1),
           ListTile(
-            leading: Icon(Icons.logout),
-            title: Text('Keluar'),
+            leading: Icon(Icons.logout, size: 28, color: Colors.red[300]),
+            title: Text('Keluar',
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.red[300])),
             onTap: () {
               Navigator.pushAndRemoveUntil(
                 context,
@@ -109,25 +119,39 @@ class _UserHeaderState extends State<_UserHeader> {
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
+        color: Colors.pink[300],
       ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              namaLengkap ?? widget.username,
+      child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, size: 38, color: Colors.pink[300]),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        namaLengkap ?? widget.username,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-              ),
-              overflow: TextOverflow.ellipsis,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        "Siswa",
+                        style: TextStyle(fontSize: 14, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
     );
   }
 }

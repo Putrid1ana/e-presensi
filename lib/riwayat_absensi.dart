@@ -105,50 +105,79 @@ class _RiwayatAbsensiPageState extends State<RiwayatAbsensiPage> {
               ],
             ),
             const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              color: Colors.grey[300],
-              child: Row(
-                children: const [
-                  _TableCellFlex(text: 'No', flex: 1),
-                  _TableCellFlex(text: 'NISN', flex: 2),
-                  _TableCellFlex(text: 'Waktu', flex: 2),
-                  _TableCellFlex(text: 'Tanggal', flex: 2),
-                  _TableCellFlex(text: 'Status', flex: 2),
-                ],
-              ),
-            ),
-            const SizedBox(height: 4),
+            // Card untuk tabel riwayat
             Expanded(
-              child: _loading
-                  ? Center(child: CircularProgressIndicator())
-                  : filteredData.isEmpty
-                      ? Center(child: Text('Belum ada data presensi.'))
-                      : ListView.builder(
-                          itemCount: filteredData.length,
-                          itemBuilder: (context, index) {
-                            final item = filteredData[index];
-                            return Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              color: index % 2 == 0
-                                  ? Colors.white
-                                  : Colors.grey[100],
-                              child: Row(
-                                children: [
-                                  _TableCellFlex(text: '${index + 1}', flex: 1),
-                                  _TableCellFlex(
-                                      text: item['nis'] ?? '', flex: 2),
-                                  _TableCellFlex(
-                                      text: item['waktu'] ?? '', flex: 2),
-                                  _TableCellFlex(
-                                      text: item['tanggal'] ?? '', flex: 2),
-                                  _TableCellFlex(
-                                      text: item['status'] ?? '', flex: 2),
-                                ],
-                              ),
-                            );
-                          },
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.pink[100],
+                          borderRadius: BorderRadius.circular(10),
                         ),
+                        child: Row(
+                          children: const [
+                            _TableCellFlex(text: 'No', flex: 1),
+                            _TableCellFlex(text: 'NISN', flex: 2),
+                            _TableCellFlex(text: 'Waktu', flex: 2),
+                            _TableCellFlex(text: 'Tanggal', flex: 2),
+                            _TableCellFlex(text: 'Status', flex: 2),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Expanded(
+                        child: _loading
+                            ? Center(child: CircularProgressIndicator())
+                            : filteredData.isEmpty
+                                ? Center(
+                                    child: Text('Belum ada data presensi.'))
+                                : ListView.builder(
+                                    itemCount: filteredData.length,
+                                    itemBuilder: (context, index) {
+                                      final item = filteredData[index];
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: index % 2 == 0
+                                              ? Colors.white
+                                              : Colors.grey[100],
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            _TableCellFlex(
+                                                text: '${index + 1}', flex: 1),
+                                            _TableCellFlex(
+                                                text: item['nis'] ?? '',
+                                                flex: 2),
+                                            _TableCellFlex(
+                                                text: item['waktu'] ?? '',
+                                                flex: 2),
+                                            _TableCellFlex(
+                                                text: item['tanggal'] ?? '',
+                                                flex: 2),
+                                            _TableCellFlex(
+                                                text: item['status'] ?? '',
+                                                flex: 2),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -168,11 +197,13 @@ class _TableCellFlex extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 13),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 13),
+          ),
         ),
       ),
     );
